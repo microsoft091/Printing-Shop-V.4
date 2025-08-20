@@ -1,0 +1,10 @@
+{
+  "name": "upload-to-drive-function",
+  "version": "1.0.0",
+  "description": "A Netlify function to upload files to Google Drive.",
+  "main": "upload-to-drive.js",
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "googleapis": "^129.0.0"
+  }
+}

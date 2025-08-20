@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Printing Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #e0e7ff, #c3dafe);
+            background-attachment: fixed;
+        }
+
+        /* Custom style for the file input to create a 'drop zone' effect */
+        .file-upload-box {
+            border-style: dashed;
+            border-width: 2px;
+            border-color: #93c5fd; /* blue-300 */
+            background-color: #f0f9ff; /* blue-50 */
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+        }
+
+        .file-upload-box:hover {
+            border-color: #60a5fa; /* blue-400 */
+            background-color: #e0f2fe; /* blue-100 */
+        }
+
+        /* Gradient and shadow for the button */
+        .submit-button {
+            background-image: linear-gradient(to right, #4c51bf, #667eea);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(76, 81, 191, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-2xl transform transition-transform hover:scale-[1.01] duration-300">
+        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-6 flex items-center justify-center">
+            <svg class="w-10 h-10 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 10h-1v-4a1 1 0 00-1-1H8a1 1 0 00-1 1v4H6a1 1 0 00-1 1v7a1 1 0 001 1h12a1 1 0 001-1v-7a1 1 0 00-1-1zm-9-4h6v4H9V6zm9 11H6v-5h12v5z"></path>
+                <path d="M12 14.5a1 1 0 100 2 1 1 0 000-2z"></path>
+            </svg>
+            Printing Shop
+        </h1>
+
+        <p class="text-center text-gray-600 text-lg mb-8">
+            Upload your files or pictures here for printing. They will be securely sent to our team.
+        </p>
+
+        <div id="uploadForm">
+            <div class="mb-4">
+                <label for="clientNameInput" class="block text-gray-700 font-medium mb-2">Enter your name:</label>
+                <input type="text" id="clientNameInput" placeholder="e.g., Jane Doe" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200" />
+            </div>
+
+            <div class="mb-6">
+                <label for="fileInput" class="block text-gray-700 font-medium mb-2">Select files:</label>
+                <div class="file-upload-box flex flex-col items-center justify-center p-8 rounded-xl text-center">
+                    <svg class="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4v-1a4 4 0 014-4h10a4 4 0 014 4v1a4 4 0 01-4 4H7z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <p id="file-name-display" class="text-gray-500 font-medium text-lg">Drag & Drop files or <span class="text-blue-600 font-semibold hover:underline">Click to browse</span></p>
+                    <input type="file" id="fileInput" accept="image/*, application/pdf, .doc, .docx" multiple class="hidden">
+                </div>
+            </div>
+            
+            <button id="submitButton" type="button" class="submit-button w-full text-white font-semibold py-4 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center">
+                <span id="button-text">Submit</span>
+                <svg id="loading-spinner" class="animate-spin h-5 w-5 ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="statusMessage" class="mt-8 text-center text-lg font-medium"></div>
+
+    </div>
+
+    <script>
+        const clientNameInput = document.getElementById('clientNameInput');
+        const fileInput = document.getElementById('fileInput');
+        const submitButton = document.getElementById('submitButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const fileUploadBox = document.querySelector('.file-upload-box');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const buttonText = document.getElementById('button-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        
+        // This is the correct relative URL for your Netlify serverless function.
+        const BACKEND_FUNCTION_URL = '/.netlify/functions/upload-to-drive';
+
+        // Add click event listener to the file upload box to open the file input
+        fileUploadBox.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Add drag-and-drop event listeners
+        fileUploadBox.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            fileUploadBox.classList.add('bg-blue-200');
+        });
+
+        fileUploadBox.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            fileUploadBox.classList.remove('bg-blue-200');
+        });
+
+        fileUploadBox.addEventListener('drop', (event) => {
+            event.preventDefault();
+            fileUploadBox.classList.remove('bg-blue-200');
+            fileInput.files = event.dataTransfer.files;
+
+            // Manually trigger the 'change' event to update the file name display
+            const changeEvent = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(changeEvent);
+        });
+
+        // Add change event listener to the file input to show the file names
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
+                fileNameDisplay.textContent = `Selected files: ${fileNames}`;
+                statusMessage.textContent = ''; // Clear status message
+            } else {
+                fileNameDisplay.textContent = 'Drag & Drop files or Click to browse';
+            }
+        });
+
+        // Add click event listener to the submit button
+        submitButton.addEventListener('click', async () => {
+            const clientName = clientNameInput.value.trim();
+            const files = fileInput.files;
+
+            if (clientName === '') {
+                statusMessage.textContent = 'Please enter your name.';
+                statusMessage.classList.add('text-red-500');
+                return;
+            }
+            if (files.length === 0) {
+                statusMessage.textContent = 'Please select at least one file to upload.';
+                statusMessage.classList.add('text-red-500');
+                return;
+            }
+
+            // Show uploading message and disable button
+            statusMessage.textContent = 'Uploading... Please wait.';
+            statusMessage.classList.remove('text-red-500', 'text-green-600');
+            statusMessage.classList.add('text-blue-600');
+            buttonText.textContent = 'Uploading...';
+            loadingSpinner.classList.remove('hidden');
+            submitButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append('clientName', clientName);
+            
+            for (const file of files) {
+                formData.append('files', file);
+            }
+
+            try {
+                const response = await fetch(BACKEND_FUNCTION_URL, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Show success message and reset form
+                    statusMessage.textContent = 'Thanks for submitting!';
+                    statusMessage.classList.remove('text-blue-600');
+                    statusMessage.classList.add('text-green-600');
+                    clientNameInput.value = ''; // Reset client name input
+                    fileInput.value = ''; // Reset file input
+                    fileNameDisplay.textContent = 'Drag & Drop files or Click to browse';
+                } else {
+                    // Show error message
+                    statusMessage.textContent = `Submission failed: ${result.message || 'Unknown error'}`;
+                    statusMessage.classList.remove('text-green-600', 'text-blue-600');
+                    statusMessage.classList.add('text-red-500');
+                    console.error('Submission failed:', result.error);
+                }
+            } catch (error) {
+                // Show network error message
+                console.error('Network error during upload:', error);
+                statusMessage.textContent = `Submission failed. Please check your internet connection.`;
+                statusMessage.classList.remove('text-green-600', 'text-blue-600');
+                statusMessage.classList.add('text-red-500');
+            } finally {
+                // Reset button state
+                buttonText.textContent = 'Submit';
+                loadingSpinner.classList.add('hidden');
+                submitButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
